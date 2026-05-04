@@ -68,7 +68,7 @@ pub fn main(init: std.process.Init) !void {
     var input_reader = input_file.readerStreaming(io, input_buffer);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(
+    try gzip.init(
         &input_reader.interface,
         .{
             .allow_concatenated_members = options.allow_concatenated_members,

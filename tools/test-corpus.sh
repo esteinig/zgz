@@ -17,4 +17,4 @@ for f in "$@"; do
   else
     echo "ok: $f"
   fi
-done
+done  

@@ -1,6 +1,6 @@
 # zgz
 
-`zgz` is a minimal Zig `0.16.0` gzip decompression library backed by
+`zgz` is a minimal Zig `v0.16.0` gzip decompression library backed by
 [zlib-ng](https://github.com/zlib-ng/zlib-ng).
 
 The library is decompression-only. It is intended as a high-performance
@@ -18,10 +18,6 @@ reference backend before moving toward a native Zig implementation.
 
 `zgz` consumes the `zng` static library artifact from
 [`zig-zlib-ng`](https://github.com/CalebQ42/zig-zlib-ng).
-
-Do **not** copy the large `zig-zlib-ng/build.zig` into this project. `zig-zlib-ng`
-owns the zlib-ng C build, generated headers, architecture-specific source
-selection, and static library artifact.
 
 `zgz` binds the native zlib-ng API:
 
@@ -54,15 +50,6 @@ Run tests:
 
 ```sh
 zig build test
-zig build test --summary all
-```
-
-Run tests across optimization modes:
-
-```sh
-zig build test -Doptimize=Debug
-zig build test -Doptimize=ReleaseSafe
-zig build test -Doptimize=ReleaseFast
 ```
 
 ## CLI tools
@@ -114,9 +101,6 @@ Examples:
 ./zig-out/bin/zgz --in-buffer 1M --out-buffer 1M sample.gz > /dev/null
 ./zig-out/bin/zgzfill --in-buffer 1M --out-buffer 1M sample.gz > /dev/null
 ```
-
-Both CLIs are streaming. They do not allocate the full compressed input or full
-decompressed output.
 
 ## Benchmarking and equivalence
 
@@ -231,7 +215,7 @@ pub fn main(init: std.process.Init) !void {
     var input_reader = input_file.readerStreaming(io, &input_buffer);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(
+    try gzip.init(
         &input_reader.interface,
         .{
             .allow_concatenated_members = true,
@@ -268,18 +252,41 @@ parser.eof = result.end;
 `GzipInput.readInto` does not allocate and does not use an intermediate
 decompressed buffer.
 
-Important: initialize `GzipInput` in place and do not move it after successful
-initialization. It contains a `Decompressor`, and zlib-ng stores an internal
-back-pointer to the decompressor stream address.
+Important: initialize `GzipInput` in its final memory location and do not move it
+after successful initialization. It contains a `Decompressor`, and zlib-ng stores
+an internal back-pointer to the decompressor stream address.
 
 Correct:
 
 ```zig
 var gzip: zgz.GzipInput = undefined;
-try gzip.initInPlace(&input_reader.interface, .{});
+try gzip.init(&input_reader.interface, .{});
+defer gzip.deinit();
 ```
 
-Avoid by-value initialized adapters that use `Decompressor` (see below).
+Incorrect:
+
+```zig
+var gzip = try zgz.GzipInput.init(&input_reader.interface, .{});
+```
+
+Incorrect:
+
+```zig
+var tmp: zgz.GzipInput = undefined;
+try tmp.init(&input_reader.interface, .{});
+
+var gzip = tmp;
+```
+
+If `GzipInput` lives inside another struct, initialize the struct storage first, then call `init` on the field:
+
+```zig
+var wrapper: Wrapper = undefined;
+
+try wrapper.gzip.init(&input_reader.interface, .{});
+defer wrapper.gzip.deinit();
+```
 
 ## Stream options
 
@@ -382,12 +389,25 @@ Correct:
 ```zig
 var d: zgz.Decompressor = .{};
 try d.initGzip();
+defer d.deinit();
 ```
 
 Incorrect:
 
 ```zig
-var d = try zgz.Decompressor.initGzip();
+var tmp: zgz.Decompressor = .{};
+try tmp.initGzip();
+
+var d = tmp;
+```
+
+If `Decompressor` lives inside another struct, initialize the struct storage first, then call `initGzip` on the field:
+
+```zig
+var wrapper: Wrapper = undefined;
+
+try wrapper.decompressor.initGzip();
+defer wrapper.decompressor.deinit();
 ```
 
 ## Error notes

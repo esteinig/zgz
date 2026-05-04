@@ -625,7 +625,7 @@ test "GzipInput decodes valid vectors with exact output-sized destination" {
         var input_reader: std.Io.Reader = .fixed(case.compressed);
 
         var gzip: zgz.GzipInput = undefined;
-        try gzip.initInPlace(&input_reader, .{});
+        try gzip.init(&input_reader, .{});
         defer gzip.deinit();
 
         const output = try testing.allocator.alloc(u8, @max(case.expected.len, 1));
@@ -655,7 +655,7 @@ test "GzipInput returns end=true after final bytes are produced" {
     var input_reader: std.Io.Reader = .fixed(vectors.hello_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     var output: [vectors.hello_raw.len]u8 = undefined;
@@ -671,7 +671,7 @@ test "GzipInput subsequent read after end returns zero end" {
     var input_reader: std.Io.Reader = .fixed(vectors.hello_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     var output: [128]u8 = undefined;
@@ -689,7 +689,7 @@ test "GzipInput decodes concatenated gzip members" {
     var input_reader: std.Io.Reader = .fixed(vectors.concat_hello_world_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     var output: [128]u8 = undefined;
@@ -704,7 +704,7 @@ test "GzipInput rejects concatenated gzip members when disabled" {
     var input_reader: std.Io.Reader = .fixed(vectors.concat_hello_world_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{
+    try gzip.init(&input_reader, .{
         .allow_concatenated_members = false,
     });
     defer gzip.deinit();
@@ -721,7 +721,7 @@ test "GzipInput rejects trailing junk" {
     var input_reader: std.Io.Reader = .fixed(vectors.hello_trailing_junk_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     var output: [128]u8 = undefined;
@@ -736,7 +736,7 @@ test "GzipInput rejects trailing junk when concatenation disabled" {
     var input_reader: std.Io.Reader = .fixed(vectors.hello_trailing_junk_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{
+    try gzip.init(&input_reader, .{
         .allow_concatenated_members = false,
     });
     defer gzip.deinit();
@@ -753,7 +753,7 @@ test "GzipInput rejects invalid gzip bytes" {
     var input_reader: std.Io.Reader = .fixed(vectors.not_gzip);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     var output: [128]u8 = undefined;
@@ -768,7 +768,7 @@ test "GzipInput rejects truncated gzip stream" {
     var input_reader: std.Io.Reader = .fixed(vectors.hello_truncated_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     var output: [128]u8 = undefined;
@@ -783,7 +783,7 @@ test "GzipInput rejects bad CRC" {
     var input_reader: std.Io.Reader = .fixed(vectors.hello_bad_crc_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     var output: [128]u8 = undefined;
@@ -798,7 +798,7 @@ test "GzipInput enforces output cap below expected size" {
     var input_reader: std.Io.Reader = .fixed(vectors.hello_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{
+    try gzip.init(&input_reader, .{
         .max_output_bytes = vectors.hello_raw.len - 1,
     });
     defer gzip.deinit();
@@ -816,7 +816,7 @@ test "GzipInput allows exact output cap for valid vectors" {
         var input_reader: std.Io.Reader = .fixed(case.compressed);
 
         var gzip: zgz.GzipInput = undefined;
-        try gzip.initInPlace(&input_reader, .{
+        try gzip.init(&input_reader, .{
             .max_output_bytes = case.expected.len,
         });
         defer gzip.deinit();
@@ -835,7 +835,7 @@ test "GzipInput allows empty gzip with zero output cap" {
     var input_reader: std.Io.Reader = .fixed(vectors.empty_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{
+    try gzip.init(&input_reader, .{
         .max_output_bytes = 0,
     });
     defer gzip.deinit();
@@ -854,7 +854,7 @@ test "GzipInput rejects non-empty gzip with zero output cap" {
     var input_reader: std.Io.Reader = .fixed(vectors.hello_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{
+    try gzip.init(&input_reader, .{
         .max_output_bytes = 0,
     });
     defer gzip.deinit();
@@ -871,7 +871,7 @@ test "GzipInput reset clears state for same upstream reader position only" {
     var input_reader: std.Io.Reader = .fixed(vectors.hello_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     var output: [128]u8 = undefined;
@@ -894,7 +894,7 @@ test "GzipInput readInto rejects zero-length output before EOF" {
     var input_reader: std.Io.Reader = .fixed(vectors.hello_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     try testing.expectError(
@@ -907,7 +907,7 @@ test "GzipInput readInto zero-length output after EOF returns end" {
     var input_reader: std.Io.Reader = .fixed(vectors.empty_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     var output: [1]u8 = undefined;
@@ -923,7 +923,7 @@ test "GzipInput exposes useful stats after successful decode" {
     var input_reader: std.Io.Reader = .fixed(vectors.fastq_gz[0..]);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     var output: [512]u8 = undefined;
@@ -1140,7 +1140,7 @@ fn expectGzipInputDecode(
     var input_reader: std.Io.Reader = .fixed(compressed);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     var output: [512]u8 = undefined;
@@ -1162,7 +1162,7 @@ fn expectGzipInputDecodeWithChunkSize(
     var input_reader: std.Io.Reader = .fixed(compressed);
 
     var gzip: zgz.GzipInput = undefined;
-    try gzip.initInPlace(&input_reader, .{});
+    try gzip.init(&input_reader, .{});
     defer gzip.deinit();
 
     var output: [512]u8 = undefined;

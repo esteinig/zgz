@@ -630,7 +630,7 @@ pub const GzipInputRead = struct {
 /// Lifetime and movement rules:
 ///
 /// - `input` must outlive this `GzipInput`;
-/// - this value must not be moved after `initInPlace`;
+/// - this value must not be moved after `init`;
 /// - call `deinit` when finished.
 ///
 /// The no-move rule matters because zlib-ng stores an internal back-pointer to
@@ -662,7 +662,7 @@ pub const GzipInput = struct {
     ///
     /// Prefer this API over a by-value constructor. `Decompressor` must have a
     /// stable address after initialization.
-    pub fn initInPlace(
+    pub fn init(
         self: *GzipInput,
         input: *std.Io.Reader,
         options: GzipInputOptions,
