@@ -1,0 +1,20 @@
+.{
+    .name = .zgz,
+    .fingerprint = 0x3c4b51d6b4387f93,
+    .version = "0.1.0",
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .zlib_ng = .{
+            .url = "git+https://github.com/CalebQ42/zig-zlib-ng.git#df17c49f09089649b00e7a1b73cce8355272a997",
+            .hash = "zlib_ng-2.3.3-pre1-2HYS4BJFAACjDZ81w0JEAYK9vAhwgEd6861Qh5azwE74",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "tools",
+        "README.md",
+        "LICENSE",
+    },
+}
