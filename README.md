@@ -1,10 +1,8 @@
 # zgz
 
-`zgz` is a minimal Zig `v0.16.0` gzip decompression library backed by
-[zlib-ng](https://github.com/zlib-ng/zlib-ng).
+`zgz` is a minimal Zig `v0.16.0` gzip decompression library backed by [zlib-ng](https://github.com/zlib-ng/zlib-ng).
 
-It is intended as a high-performance decompressor for high-throughput genome 
-sequencing data in production environments and can replace .
+It is intended as an optimized decompressor for library bindings and high-throughput genome sequencing data in production environments.
 
 ## Features
 
