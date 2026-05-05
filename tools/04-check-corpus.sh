@@ -3,14 +3,13 @@
 # Check zgz against gzip -dc over a generated or user-provided corpus.
 #
 # Usage:
-#   ./tools/check-corpus.sh
-#   ./tools/check-corpus.sh testdata/corpus
-#   ./tools/check-corpus.sh --cmp testdata/corpus
-#   ./tools/check-corpus.sh --zgz ./zig-out/bin/zgz testdata/corpus
+#   ./tools/04-check-corpus.sh
+#   ./tools/04-check-corpus.sh testdata/corpus
+#   ./tools/04-check-corpus.sh --cmp testdata/corpus
+#   ./tools/04-check-corpus.sh --zgz ./zig-out/bin/zgz testdata/corpus
 #
 # Options:
-#   --cmp             Use byte-for-byte cmp with process substitution instead of
-#                     SHA-256 streams. Good for debugging mismatches.
+#   --cmp             Use byte-for-byte cmp with process substitution instead of SHA-256 streams.
 #   --valid-only      Only check valid corpus files.
 #   --invalid-only    Only check invalid corpus files.
 #   --zgz PATH        Path to zgzcat binary.

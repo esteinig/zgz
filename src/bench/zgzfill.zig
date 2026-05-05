@@ -11,7 +11,7 @@ const CliOptions = struct {
 
 pub fn main(init: std.process.Init) !void {
     const io = init.io;
-    const allocator = std.heap.smp_allocator;
+    const allocator = std.heap.smp_allocator; // no use in fixed buffer allocator as we do not allocate except on startup
 
     var stderr_buf: [16 * 1024]u8 = undefined;
     var stderr_file = std.Io.File.stderr();
@@ -222,7 +222,7 @@ fn usage(writer: *std.Io.Writer) !void {
         \\                        Default: 256K.
         \\  --out-buffer BYTES    Direct decompression/output buffer. Supports K/M/G suffixes.
         \\                        Default: 256K.
-        \\  --max-output BYTES    Abort if decompressed output exceeds this cap.
+        \\  --max-output BYTES    Abort if output exceeds this limit. Supports K/M/G suffixes.
         \\  --no-concat           Reject trailing gzip members or trailing data.
         \\  -h, --help            Show this help.
         \\

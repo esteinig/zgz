@@ -24,8 +24,8 @@
 #   - gzip is invoked with -n to avoid embedding original filename/timestamp.
 #
 # Usage:
-#   ./tools/make-corpus.sh
-#   ./tools/make-corpus.sh testdata/my-corpus
+#   ./tools/01-make-corpus.sh
+#   ./tools/01-make-corpus.sh testdata/my-corpus
 
 set -eu
 

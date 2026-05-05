@@ -179,7 +179,7 @@ pub const InflateStep = struct {
 /// streaming driver uses this enum to make the post-member transition explicit:
 /// either the logical stream is complete, or the decompressor has been reset and
 /// the caller should continue feeding the next member.
-const AfterMember = enum {
+pub const AfterMember = enum {
     /// No additional input is available; the logical gzip stream is complete.
     done,
 
@@ -188,6 +188,29 @@ const AfterMember = enum {
     /// the streaming loop.
     continue_next_member,
 };
+
+
+/// Return a zero-initialized zlib-ng native stream.
+///
+/// zlib-ng initializes internal fields in `zng_inflateInit2`.
+pub fn zeroStream() c.z_stream {
+    return .{
+        .next_in = null,
+        .avail_in = 0,
+        .total_in = 0,
+        .next_out = null,
+        .avail_out = 0,
+        .total_out = 0,
+        .msg = null,
+        .state = null,
+        .zalloc = null,
+        .zfree = null,
+        .@"opaque" = null,
+        .data_type = 0,
+        .adler = 0,
+        .reserved = 0,
+    };
+}
 
 /// Stateful gzip decompressor backed by zlib-ng's native inflate API.
 ///
@@ -324,7 +347,7 @@ pub const Decompressor = struct {
 /// This function deliberately uses `peekGreedy(1)` rather than reading into a
 /// temporary buffer. The byte remains owned by the reader and will be consumed by
 /// the next inflate step after reset.
-fn afterMember(
+pub fn afterMember(
     reader: *std.Io.Reader,
     decompressor: *Decompressor,
     options: StreamOptions,
@@ -362,7 +385,7 @@ fn afterMember(
 /// This helper is also required because native zlib-ng may reject zero-length
 /// output probes with `Z_STREAM_ERROR`; do not call inflate with both no input
 /// and no output as a state-machine probe.
-fn finishAtOutputLimit(
+pub fn finishAtOutputLimit(
     reader: *std.Io.Reader,
     decompressor: *Decompressor,
     stats: *StreamStats,
@@ -414,6 +437,35 @@ fn finishAtOutputLimit(
     }
 }
 
+
+/// Return writable output capacity respecting `max_output_bytes`.
+///
+/// This borrows the writer's own buffer; it does not allocate and does not copy.
+pub fn writableOutputSlice(
+    writer: *std.Io.Writer,
+    decompressed_so_far: usize,
+    max_output_bytes: ?usize,
+) StreamError![]u8 {
+    if (max_output_bytes) |cap| {
+        if (decompressed_so_far >= cap) {
+            return &.{};
+        }
+
+        const remaining = cap - decompressed_so_far;
+        const slice = try writer.writableSliceGreedy(1);
+        return slice[0..@min(slice.len, remaining)];
+    }
+
+    return writer.writableSliceGreedy(1);
+}
+
+/// True when the configured decompressed-output cap has been reached.
+pub fn isAtOutputCap(decompressed_so_far: usize, max_output_bytes: ?usize) bool {
+    const cap = max_output_bytes orelse return false;
+    return decompressed_so_far >= cap;
+}
+
+
 /// Stream bytes from `reader` to `writer` without intermediate buffers.
 ///
 /// This is the fast path for CLI tools and benchmarks:
@@ -437,8 +489,7 @@ fn finishAtOutputLimit(
 /// try stdout.interface.flush();
 /// ```
 ///
-/// Both the reader and writer must have non-empty buffers. That is deliberate:
-/// this API is optimized for buffered streaming, not byte-at-a-time I/O sadness.
+/// Both the reader and writer must have non-empty buffers. 
 pub fn decompress(
     reader: *std.Io.Reader,
     writer: *std.Io.Writer,
@@ -521,54 +572,6 @@ pub fn decompress(
     }
 }
 
-/// Return writable output capacity respecting `max_output_bytes`.
-///
-/// This borrows the writer's own buffer; it does not allocate and does not copy.
-fn writableOutputSlice(
-    writer: *std.Io.Writer,
-    decompressed_so_far: usize,
-    max_output_bytes: ?usize,
-) StreamError![]u8 {
-    if (max_output_bytes) |cap| {
-        if (decompressed_so_far >= cap) {
-            return &.{};
-        }
-
-        const remaining = cap - decompressed_so_far;
-        const slice = try writer.writableSliceGreedy(1);
-        return slice[0..@min(slice.len, remaining)];
-    }
-
-    return writer.writableSliceGreedy(1);
-}
-
-/// True when the configured decompressed-output cap has been reached.
-fn isAtOutputCap(decompressed_so_far: usize, max_output_bytes: ?usize) bool {
-    const cap = max_output_bytes orelse return false;
-    return decompressed_so_far >= cap;
-}
-
-/// Return a zero-initialized zlib-ng native stream.
-///
-/// zlib-ng initializes internal fields in `zng_inflateInit2`.
-fn zeroStream() c.z_stream {
-    return .{
-        .next_in = null,
-        .avail_in = 0,
-        .total_in = 0,
-        .next_out = null,
-        .avail_out = 0,
-        .total_out = 0,
-        .msg = null,
-        .state = null,
-        .zalloc = null,
-        .zfree = null,
-        .@"opaque" = null,
-        .data_type = 0,
-        .adler = 0,
-        .reserved = 0,
-    };
-}
 
 /// Options for direct gzip input.
 ///

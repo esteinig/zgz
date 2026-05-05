@@ -3,4 +3,8 @@ zig-out/
 zig-pkg/
 
 testdata/
-zgz-hyperfine.json
+
+
+bench/target
+bench/zgz-hyperfine.json
+bench/Cargo.lock

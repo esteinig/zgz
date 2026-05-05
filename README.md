@@ -3,8 +3,8 @@
 `zgz` is a minimal Zig `v0.16.0` gzip decompression library backed by
 [zlib-ng](https://github.com/zlib-ng/zlib-ng).
 
-The library is decompression-only. It is intended as a high-performance
-reference backend before moving toward a native Zig implementation.
+It is intended as a high-performance decompressor for high-throughput genome 
+sequencing data in production environments and can replace .
 
 ## Features
 
@@ -84,7 +84,7 @@ Both CLIs accept:
 --out-buffer BYTES   Output/decompression buffer. Supports K/M/G suffixes.
                      Default: 256K.
 
---max-output BYTES   Abort if decompressed output exceeds this cap.
+--max-output BYTES   Abort if output exceeds this limit. Supports K/M/G suffixes.
                      Must be greater than zero in the CLI.
 
 --no-concat          Reject concatenated gzip members and trailing data.
@@ -193,7 +193,7 @@ bytes directly into the writer buffer.
 ## Direct buffer-filler API
 
 Use `GzipInput` when the caller already owns an optimized output buffer, such as
-a FASTQ parser refill buffer:
+a parser refill buffer:
 
 ```text
 file -> std.Io.File.Reader buffer -> zlib-ng -> caller output buffer
@@ -252,9 +252,9 @@ parser.eof = result.end;
 `GzipInput.readInto` does not allocate and does not use an intermediate
 decompressed buffer.
 
-Important: initialize `GzipInput` in its final memory location and do not move it
-after successful initialization. It contains a `Decompressor`, and zlib-ng stores
-an internal back-pointer to the decompressor stream address.
+> [!IMPORTANT]
+> Initialize `GzipInput` in its final memory location and do not move it after successful initialization. It 
+contains a `Decompressor`, and zlib-ng stores an internal back-pointer to the decompressor stream address.
 
 Correct:
 
@@ -262,12 +262,6 @@ Correct:
 var gzip: zgz.GzipInput = undefined;
 try gzip.init(&input_reader.interface, .{});
 defer gzip.deinit();
-```
-
-Incorrect:
-
-```zig
-var gzip = try zgz.GzipInput.init(&input_reader.interface, .{});
 ```
 
 Incorrect:
@@ -379,10 +373,10 @@ while (true) {
 what zlib-ng did. The caller-owned driver loop decides whether a no-progress
 step is recoverable or fatal.
 
-Important: initialize `Decompressor` in place and do not move it after
-successful initialization. zlib-ng stores an internal back-pointer to the stream
-address. Do not use a constructor that returns an initialized `Decompressor` by
-value.
+
+> [!IMPORTANT]
+> Initialize `Decompressor` in place and do not move it after successful initialization. zlib-ng stores an internal
+back-pointer to the stream address. Do not use a constructor that returns an initialized `Decompressor` by value.
 
 Correct:
 
@@ -399,6 +393,7 @@ var tmp: zgz.Decompressor = .{};
 try tmp.initGzip();
 
 var d = tmp;
+defer d.deinit();
 ```
 
 If `Decompressor` lives inside another struct, initialize the struct storage first, then call `initGzip` on the field:
