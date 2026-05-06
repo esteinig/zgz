@@ -52,7 +52,7 @@ const gzip_window_bits: c_int = 15 + 16;
 const z_no_flush: c_int = 0;
 
 /// Errors that can occur while driving the zlib-ng inflate state machine.
-pub const InflateError = error{
+pub const InflateError = error {
     /// The compressed stream is malformed or not valid for the configured
     /// wrapper format.
     InvalidData,
@@ -82,7 +82,7 @@ pub const InflateError = error{
 
 
 /// High-level streaming errors.
-pub const StreamError = InflateError || error{
+pub const StreamError = InflateError || error {
     /// The input ended before zlib-ng reached the gzip stream end marker.
     UnexpectedEnd,
 

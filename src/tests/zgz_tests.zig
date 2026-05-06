@@ -1,7 +1,7 @@
 //! Unit tests for zgz.
 //!
 //! These tests focus on library behavior, not CLI behavior. The CLI should be
-//! tested with shell-level oracle checks against `zcat`/`gzip -dc`.
+//! tested with shell-level script checks against `zcat`/`gzip -dc`.
 //!
 //! Coverage goals:
 //!

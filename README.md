@@ -12,10 +12,10 @@ the tested [benchmark cases](#benchmarking-and-equivalence).
 ## Features
 
 - Streaming gzip decompression using native `zlib-ng` bindings via `zig-zlib-ng`
-- Concatenated gzip member support and bounded decompressed-output caps
-- Minimal streaming decompression executable for Linux/MacOS
+- High-performance, minimal streaming decompression executable for Linux/MacOS
+- Concatenated gzip member support and decompressed output limit
 - Zig library and APIs for custom implementations
-- No other dependencies (standard library only)
+- No other dependencies - standard library only
 
 ## Interfaces
 
@@ -25,7 +25,7 @@ The `zgz` executable can be used as a general `zcat`-like decompressor:
 zgz reads.fq.gz > reads.fq
 ```
 
-which is ~3x faster than system `gzip` in our genomics benchmarks.
+It is ~3x faster than system `gzip` in our genomics benchmarks.
 
 Zig library for custom implementations:
   - High-level `std.Io.Reader` to `std.Io.Writer` streaming API ([`zgz.decompress`](#high-level-streaming-api))
@@ -123,18 +123,28 @@ Examples:
 
 ## Benchmarking and equivalence
 
-Create a vlaid and invalid file corpus:
+Dependencies used for benchmark:
+
+ - Zig 0.16.0
+ - Rust 1.93
+ - Python 3.14
+ - `gzip`/`zcat` 1.10
+
+```sh
+# Optional: easy replication with conda/mamba environment
+conda/mamba install -c conda-forge -c esteinig zgz-benchmark
+```
+
+Create a valid and invalid gzip compressed file corpus:
 
 ```sh
 tools/01-make-corpus.sh ./testdata
 ```
 
-Verify output equivalence before benchmarking:
+Validate `zgz` valid/invalid test corpus against `zcat` with hash sums:
 
 ```sh
-cmp <(zcat sample.gz) <(./zig-out/bin/zgz sample.gz)
-cmp <(zcat sample.gz) <(./zig-out/bin/zgzfill sample.gz)
-cmp <(./zig-out/bin/zgz sample.gz) <(./zig-out/bin/zgzfill sample.gz)
+tools/02-check-corpus
 ```
 
 Hash-check multiple files:
@@ -154,7 +164,7 @@ for f in "$@"; do
   fi
 
   echo "ok: $f"
-done
+don
 ```
 
 Compare against external tools:
@@ -167,7 +177,7 @@ hyperfine \
   'zcat sample.gz > /dev/null'
 ```
 
-Try larger buffers:
+With larger buffers:
 
 ```sh
 hyperfine \
@@ -310,7 +320,7 @@ try wrapper.gzip.init(&input_reader.interface, .{});
 defer wrapper.gzip.deinit();
 ```
 
-#### Stream options
+### Configuration options
 
 The high-level streaming API uses:
 
@@ -330,7 +340,7 @@ pub const GzipInputOptions = struct {
 };
 ```
 
-- `allow_concatenated_members`
+#### `allow_concatenated_members`
 
 Enabled by default. This matches `gzip -dc` and `zcat`, which decode
 concatenated gzip members as one logical stream.
@@ -343,7 +353,7 @@ _ = try zgz.decompress(reader, writer, .{
 });
 ```
 
-- `max_output_bytes`
+#### `max_output_bytes`
 
 Limits **total decompressed bytes**, not compressed input bytes or output buffer
 size.
@@ -357,7 +367,7 @@ _ = try zgz.decompress(reader, writer, .{
 Semantics:
 
 ```text
-null -> no decompressed-output cap
+null -> allow all byte - no decompressed-output limit configured
 0    -> allow only streams that produce zero decompressed bytes
 N    -> allow at most N decompressed bytes
 ```
@@ -433,25 +443,74 @@ try wrapper.decompressor.initGzip();
 defer wrapper.decompressor.deinit();
 ```
 
-## Error notes
+## Error model
 
-Common errors:
+```zig
 
-```text
-InvalidData            malformed gzip data or CRC/trailer failure
-UnexpectedEnd          input ended before gzip stream completion
-TrailingData           trailing data found when concatenation is disabled
-OutputLimitExceeded    decompressed output would exceed max_output_bytes
-NoProgress             high-level driver observed no input/output progress
-ReadFailed             underlying reader failed
-WriteFailed            underlying writer failed
-WriterBufferTooSmall   caller provided no writable output space
-StreamEnded            Decompressor reused after end without reset
-InvalidState           invalid zlib-ng state or incorrect API usage
+/// Errors that can occur while driving the zlib-ng inflate state machine.
+pub const InflateError = error{
+    /// The compressed stream is malformed or not valid for the configured
+    /// wrapper format.
+    InvalidData,
+
+    /// zlib-ng reported an invalid stream state. This usually means the
+    /// decompressor was not initialized, was moved after initialization, 
+    /// or the native ABI binding is wrong.
+    InvalidState,
+
+    /// zlib-ng could not allocate internal inflate state.
+    OutOfMemory,
+
+    /// The input or output slice exceeded zlib-ng's `uint32_t` availability
+    /// counter limit.
+    SliceTooLarge,
+
+    /// `decompress` was called after the current member reached end-of-stream.
+    ///
+    /// Call `reset` before feeding another gzip member, or create a new
+    /// decompressor. This guard catches accidental post-end reuse instead of
+    /// forwarding an invalid state transition into zlib-ng.
+    StreamEnded,
+
+    /// zlib-ng returned a code this binding does not recognize.
+    UnknownZlibError,
+};
 ```
 
-> [!INFO]
-> `zgz.GzipInput.err` stores the raw error from `zlib-ng` direct buffer-filler API.
+```zig
+/// High-level streaming errors.
+pub const StreamError = InflateError || error {
+    /// The input ended before zlib-ng reached the gzip stream end marker.
+    UnexpectedEnd,
+
+    /// Non-gzip trailing data was present after the first gzip member while
+    /// concatenated-member decoding was disabled.
+    TrailingData,
+
+    /// The decompressed byte limit was reached before the stream ended.
+    OutputLimitExceeded,
+
+    /// The supplied `std.Io.Reader` has no usable buffer.
+    ReaderBufferTooSmall,
+
+    /// The supplied `std.Io.Writer` has no usable buffer.
+    WriterBufferTooSmall,
+
+    /// The streaming driver observed a successful inflate step that consumed no
+    /// input, produced no output, and did not finish the current member.
+    ///
+    /// Without this guard the driver could spin forever. This usually indicates
+    /// a bug in the driver loop, an invalid stream transition, or an unexpected
+    /// zlib-ng state-machine result.
+    NoProgress,
+
+    /// The underlying `std.Io.Reader` failed.
+    ReadFailed,
+
+    /// The underlying `std.Io.Writer` failed.
+    WriteFailed,
+};
+```
 
 ## Tests and corpus checks
 
