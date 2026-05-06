@@ -104,7 +104,6 @@ pub extern fn zng_inflateEnd(
 ) int32_t;
 
 
-
 test "zng_stream ABI layout sanity" {
     try std.testing.expect(@sizeOf(zng_stream) >= 96);
     try std.testing.expect(@alignOf(zng_stream) >= @alignOf(usize));
@@ -114,7 +113,7 @@ test "zng_stream ABI layout sanity" {
     try std.testing.expect(@offsetOf(zng_stream, "reserved") > @offsetOf(zng_stream, "adler"));
 }
 
-// test "zng_stream ABI layout sanity Linux x86_64" {
+// test "zng_stream ABI layout sanity - Linux x86_64" {
 //     try std.testing.expectEqual(@as(usize, 104), @sizeOf(zng_stream));
 //     try std.testing.expectEqual(@as(usize, 8), @alignOf(zng_stream));
 

@@ -1,27 +1,40 @@
 # zgz
 
-`zgz` is a minimal Zig `v0.16.0` gzip decompression library backed by [zlib-ng](https://github.com/zlib-ng/zlib-ng). It is intended as a highly optimized decompressor for high-throughput genome sequencing data in production environments with library bindings for other languages. 
+`zgz` is a minimal Zig `v0.16.0` gzip decompression library backed by
+[zlib-ng](https://github.com/zlib-ng/zlib-ng). It is intended as a 
+highly optimized decompressor for high-throughput genome sequencing 
+data in production environments and bioinformatics applications.
 
-Performance is on par or better than Rust `flate2` implementations using `zlib-ng`, `zlib-rs` or `miniz_oxide` backends, and exceeds `gzip`/`zcat` in the [benchmark cases](#benchmarking-and-equivalence). 
-
-`zgz` command-line client can be used as a general decompressor like `zcat`:
-
-```
-zgz reads.fq.gz > reads.fq
-```
+Performance is on par (or better) than Rust `flate2` implementations 
+(`zlib-ng`, `zlib-rs` or `miniz_oxide`) and exceeds `gzip`/`zcat` in 
+the tested [benchmark cases](#benchmarking-and-equivalence). 
 
 ## Features
 
 - Streaming gzip decompression using native `zlib-ng` bindings via `zig-zlib-ng`
 - Concatenated gzip member support and bounded decompressed-output caps
-- High-level `std.Io.Reader` to `std.Io.Writer` streaming API
-- Direct buffer-filler API that inflates into caller-owned buffers
-- Low-level stateful decompressor API
+- Minimal streaming decompression executable for Linux/MacOS
+- Zig library and APIs for custom implementations
+- No other dependencies (standard library only)
+
+## Interfaces
+
+The `zgz` executable can be used as a general `zcat`-like decompressor:
+
+```sh
+zgz reads.fq.gz > reads.fq
+```
+
+which is ~3x faster than system `gzip` in our genomics benchmarks.
+
+Zig library for custom implementations:
+  - High-level `std.Io.Reader` to `std.Io.Writer` streaming API ([`zgz.decompress`](#high-level-streaming-api))
+  - Direct buffer-filler API that inflates into caller-owned buffers ([`zgz.GzipInput`](#direct-buffer-filler-api))
+  - Low-level stateful decompressor API for custom drivers ([`zgz.Decompressor`](#low-level-decompressor-api))
 
 ## Dependency model
 
-`zgz` consumes the `zng` static library artifact from
-[`zig-zlib-ng`](https://github.com/CalebQ42/zig-zlib-ng).
+`zgz` consumes the `zng` static library artifact from [`zig-zlib-ng`](https://github.com/CalebQ42/zig-zlib-ng).
 
 `zgz` binds the native `zlib-ng` API:
 
@@ -33,8 +46,8 @@ zng_inflateReset2
 zng_inflateEnd
 ```
 
-It does not bind the classic zlib-compatible symbols such as `inflate`,
-`inflateInit2_`, or `zlibVersion`.
+It does not bind the classic zlib-compatible symbols such as 
+`inflate`, `inflateInit2_`, or `zlibVersion`.
 
 ## Build
 
@@ -110,6 +123,12 @@ Examples:
 
 ## Benchmarking and equivalence
 
+Create a vlaid and invalid file corpus:
+
+```sh
+tools/01-make-corpus.sh ./testdata
+```
+
 Verify output equivalence before benchmarking:
 
 ```sh
@@ -158,7 +177,11 @@ hyperfine \
   'zcat sample.gz > /dev/null'
 ```
 
-## High-level streaming API
+## `zgz` library and APIs
+
+`Zig v0.16.0`
+
+### High-level streaming API
 
 Use `zgz.decompress` to stream from a `std.Io.Reader` to a `std.Io.Writer`:
 
@@ -196,7 +219,7 @@ pub fn main(init: std.process.Init) !void {
 `zgz.decompress` borrows input directly from the reader and writes decompressed
 bytes directly into the writer buffer.
 
-## Direct buffer-filler API
+### Direct buffer-filler API
 
 Use `GzipInput` when the caller already owns an optimized output buffer, such as
 a parser refill buffer:
@@ -287,7 +310,7 @@ try wrapper.gzip.init(&input_reader.interface, .{});
 defer wrapper.gzip.deinit();
 ```
 
-## Stream options
+#### Stream options
 
 The high-level streaming API uses:
 
@@ -303,11 +326,11 @@ The direct API uses the equivalent:
 ```zig
 pub const GzipInputOptions = struct {
     allow_concatenated_members: bool = true,
-    max_output_bytes: ?usize = null,
+ max_output_bytes: ?usize = null,
 };
 ```
 
-### `allow_concatenated_members`
+- `allow_concatenated_members`
 
 Enabled by default. This matches `gzip -dc` and `zcat`, which decode
 concatenated gzip members as one logical stream.
@@ -320,7 +343,7 @@ _ = try zgz.decompress(reader, writer, .{
 });
 ```
 
-### `max_output_bytes`
+- `max_output_bytes`
 
 Limits **total decompressed bytes**, not compressed input bytes or output buffer
 size.
@@ -342,7 +365,7 @@ N    -> allow at most N decompressed bytes
 The library treats `0` literally as “allow zero output bytes.” The CLI rejects
 `--max-output 0` because it is not useful for a cat-like decompression command.
 
-## Low-level Decompressor API
+### Low-level Decompressor API
 
 For custom drivers, use `Decompressor` directly:
 
@@ -427,8 +450,8 @@ StreamEnded            Decompressor reused after end without reset
 InvalidState           invalid zlib-ng state or incorrect API usage
 ```
 
-For concrete file readers/writers, map `ReadFailed` and `WriteFailed` through
-the concrete `.err` field at the call boundary.
+> [!INFO]
+> `zgz.GzipInput.err` stores the raw error from `zlib-ng` direct buffer-filler API.
 
 ## Tests and corpus checks
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-zig build -Doptimize=ReleaseFast >/dev/null
+zig build -Doptimize=ReleaseFast > /dev/null
 cargo build --release --manifest-path bench/Cargo.toml > /dev/null
 
 for f in "$@"; do
