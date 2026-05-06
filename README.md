@@ -28,6 +28,7 @@ zgz reads.fq.gz > reads.fq
 It is ~3x faster than system `gzip` in our genomics benchmarks.
 
 Zig library for custom implementations:
+
   - High-level `std.Io.Reader` to `std.Io.Writer` streaming API ([`zgz.decompress`](#high-level-streaming-api))
   - Direct buffer-filler API that inflates into caller-owned buffers ([`zgz.GzipInput`](#direct-buffer-filler-api))
   - Low-level stateful decompressor API for custom drivers ([`zgz.Decompressor`](#low-level-decompressor-api))
@@ -46,16 +47,9 @@ zng_inflateReset2
 zng_inflateEnd
 ```
 
-It does not bind the classic zlib-compatible symbols such as 
-`inflate`, `inflateInit2_`, or `zlibVersion`.
+It does not bind the classic zlib-compatible symbols such as `inflate`, `inflateInit2_`, or `zlibVersion`.
 
 ## Build
-
-Fetch the `zlib-ng` dependency:
-
-```sh
-zig fetch --save git+https://github.com/CalebQ42/zig-zlib-ng.git
-```
 
 Build:
 
@@ -128,12 +122,8 @@ Dependencies used for benchmark:
  - Zig 0.16.0
  - Rust 1.93
  - Python 3.14
- - `gzip`/`zcat` 1.10
+ - gzip 1.10
 
-```sh
-# Optional: easy replication with conda/mamba environment
-conda/mamba install -c conda-forge -c esteinig zgz-benchmark
-```
 
 Create a valid and invalid gzip compressed file corpus:
 
@@ -141,10 +131,10 @@ Create a valid and invalid gzip compressed file corpus:
 tools/01-make-corpus.sh ./testdata
 ```
 
-Validate `zgz` valid/invalid test corpus against `zcat` with hash sums:
+Validate `zgz` valid/invalid test corpus against `zcat`:
 
 ```sh
-tools/02-check-corpus
+tools/02-check-corpus.sh testdata/
 ```
 
 Hash-check multiple files:
@@ -446,7 +436,6 @@ defer wrapper.decompressor.deinit();
 ## Error model
 
 ```zig
-
 /// Errors that can occur while driving the zlib-ng inflate state machine.
 pub const InflateError = error{
     /// The compressed stream is malformed or not valid for the configured
@@ -475,9 +464,7 @@ pub const InflateError = error{
     /// zlib-ng returned a code this binding does not recognize.
     UnknownZlibError,
 };
-```
 
-```zig
 /// High-level streaming errors.
 pub const StreamError = InflateError || error {
     /// The input ended before zlib-ng reached the gzip stream end marker.

@@ -103,7 +103,7 @@ fi
 
 if [ ! -x "$ZGZCAT" ]; then
   echo "error: zgz not found or not executable: $ZGZCAT" >&2
-  echo "hint: run zig build -Doptimize=ReleaseFast" >&2
+  echo "hint: run zig build -Doptimize=ReleaseFast" >&2 
   exit 127
 fi
 
