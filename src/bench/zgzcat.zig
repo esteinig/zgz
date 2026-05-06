@@ -1,6 +1,27 @@
 const std = @import("std");
 const zgz = @import("zgz");
 
+fn usage(writer: *std.Io.Writer) !void {
+    try writer.writeAll(
+        \\Usage:
+        \\  zgz [options] FILE.gz
+        \\
+        \\Options:
+        \\  --in-buffer BYTES     File reader buffer. Supports K/M/G suffixes.
+        \\                        Default: 256K.
+        \\  --out-buffer BYTES    File writer buffer. Supports K/M/G suffixes.
+        \\                        Default: 256K.
+        \\  --max-output BYTES    Abort if output exceeds this limit. Supports K/M/G suffixes.
+        \\  --no-concat           Reject trailing gzip members or trailing data.
+        \\  -h, --help            Show this help.
+        \\
+        \\Examples:
+        \\  zgz sample.gz > /dev/null
+        \\  zgz --in-buffer 1M --out-buffer 1M sample.gz > /dev/null
+        \\
+    );
+}
+
 const CliOptions = struct {
     input_path: ?[]const u8 = null,
     input_buffer_size: usize = zgz.default_input_buffer_size,
@@ -43,8 +64,7 @@ pub fn main(init: std.process.Init) !void {
         return error.InvalidArguments;
     }
 
-    // CLI policy: zero is not useful for a cat-like command. The library may
-    // still support `.max_output_bytes = 0` as "allow zero output bytes only".
+    // CLI policy: zero is not useful for a cat-like command
     if (options.max_output_bytes) |max_output_bytes| {
         if (max_output_bytes == 0) {
             try stderr.interface.writeAll(
@@ -180,25 +200,4 @@ fn parseSize(text: []const u8) !usize {
 
     const base = try std.fmt.parseInt(usize, digits, 10);
     return std.math.mul(usize, base, multiplier) catch error.InvalidArguments;
-}
-
-fn usage(writer: *std.Io.Writer) !void {
-    try writer.writeAll(
-        \\Usage:
-        \\  zgz [options] FILE.gz
-        \\
-        \\Options:
-        \\  --in-buffer BYTES     File reader buffer. Supports K/M/G suffixes.
-        \\                        Default: 256K.
-        \\  --out-buffer BYTES    File writer buffer. Supports K/M/G suffixes.
-        \\                        Default: 256K.
-        \\  --max-output BYTES    Abort if output exceeds this limit. Supports K/M/G suffixes.
-        \\  --no-concat           Reject trailing gzip members or trailing data.
-        \\  -h, --help            Show this help.
-        \\
-        \\Examples:
-        \\  zgz sample.gz > /dev/null
-        \\  zgz --in-buffer 1M --out-buffer 1M sample.gz > /dev/null
-        \\
-    );
 }

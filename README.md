@@ -1,15 +1,21 @@
 # zgz
 
-`zgz` is a minimal Zig `v0.16.0` gzip decompression library backed by [zlib-ng](https://github.com/zlib-ng/zlib-ng).
+`zgz` is a minimal Zig `v0.16.0` gzip decompression library backed by [zlib-ng](https://github.com/zlib-ng/zlib-ng). It is intended as a highly optimized decompressor for high-throughput genome sequencing data in production environments with library bindings for other languages. 
 
-It is intended as an optimized decompressor for library bindings and high-throughput genome sequencing data in production environments.
+Performance is on par or better than Rust `flate2` implementations using `zlib-ng`, `zlib-rs` or `miniz_oxide` backends, and exceeds `gzip`/`zcat` in the [benchmark cases](#benchmarking-and-equivalence). 
+
+`zgz` command-line client can be used as a general decompressor like `zcat`:
+
+```
+zgz reads.fq.gz > reads.fq
+```
 
 ## Features
 
-- Streaming gzip decompression using native zlib-ng bindings via `zig-zlib-ng`
+- Streaming gzip decompression using native `zlib-ng` bindings via `zig-zlib-ng`
 - Concatenated gzip member support and bounded decompressed-output caps
 - High-level `std.Io.Reader` to `std.Io.Writer` streaming API
-- Direct pull API that inflates into caller-owned buffers
+- Direct buffer-filler API that inflates into caller-owned buffers
 - Low-level stateful decompressor API
 
 ## Dependency model
@@ -17,7 +23,7 @@ It is intended as an optimized decompressor for library bindings and high-throug
 `zgz` consumes the `zng` static library artifact from
 [`zig-zlib-ng`](https://github.com/CalebQ42/zig-zlib-ng).
 
-`zgz` binds the native zlib-ng API:
+`zgz` binds the native `zlib-ng` API:
 
 ```text
 zlibng_version
@@ -32,7 +38,7 @@ It does not bind the classic zlib-compatible symbols such as `inflate`,
 
 ## Build
 
-Fetch the zlib-ng dependency:
+Fetch the `zlib-ng` dependency:
 
 ```sh
 zig fetch --save git+https://github.com/CalebQ42/zig-zlib-ng.git
@@ -93,9 +99,11 @@ Both CLIs accept:
 Examples:
 
 ```sh
+# Default buffer size: 256K
 ./zig-out/bin/zgz testdata/biofast.fq.gz > /dev/null
 ./zig-out/bin/zgzfill testdata/biofast.fq.gz > /dev/null
 
+# Larger buffer size may increase performance
 ./zig-out/bin/zgz --in-buffer 1M --out-buffer 1M sample.gz > /dev/null
 ./zig-out/bin/zgzfill --in-buffer 1M --out-buffer 1M sample.gz > /dev/null
 ```
@@ -164,12 +172,12 @@ pub fn main(init: std.process.Init) !void {
     var input_file = try std.Io.Dir.cwd().openFile(io, "sample.gz", .{});
     defer input_file.close(io);
 
-    var input_buffer: [256 * 1024]u8 = undefined;
+    var input_buffer: [256 * 1024]u8 = undefined; // on stack
     var input_reader = input_file.readerStreaming(io, &input_buffer);
 
     var stdout_file = std.Io.File.stdout();
 
-    var output_buffer: [256 * 1024]u8 = undefined;
+    var output_buffer: [256 * 1024]u8 = undefined; // on stack
     var output_writer = stdout_file.writer(io, &output_buffer);
 
     _ = try zgz.decompress(
@@ -209,7 +217,7 @@ pub fn main(init: std.process.Init) !void {
     var input_file = try std.Io.Dir.cwd().openFile(io, "reads.fastq.gz", .{});
     defer input_file.close(io);
 
-    var input_buffer: [256 * 1024]u8 = undefined;
+    var input_buffer: [256 * 1024]u8 = undefined; // on stack
     var input_reader = input_file.readerStreaming(io, &input_buffer);
 
     var gzip: zgz.GzipInput = undefined;
@@ -222,12 +230,12 @@ pub fn main(init: std.process.Init) !void {
     );
     defer gzip.deinit();
 
-    var parser_buffer: [800 * 1024]u8 = undefined;
+    var parser_buffer: [800 * 1024]u8 = undefined;  // on stack
 
     while (true) {
         const result = try gzip.readInto(parser_buffer[0..]);
 
-        // Process parser_buffer[0..result.written] here.
+        // Process parser_buffer[0..result.written]
 
         if (result.end) break;
 
@@ -247,12 +255,11 @@ parser.end += result.written;
 parser.eof = result.end;
 ```
 
-`GzipInput.readInto` does not allocate and does not use an intermediate
-decompressed buffer.
+`GzipInput.readInto` does not allocate and does not use an intermediate decompressed buffer.
 
 > [!IMPORTANT]
 > Initialize `GzipInput` in its final memory location and do not move it after successful initialization. It 
-contains a `Decompressor`, and zlib-ng stores an internal back-pointer to the decompressor stream address.
+contains a `Decompressor`, and `zlib-ng` stores an internal back-pointer to the decompressor stream address.
 
 Correct:
 
@@ -368,12 +375,12 @@ while (true) {
 ```
 
 `Decompressor.decompress` does not itself return `error.NoProgress`; it reports
-what zlib-ng did. The caller-owned driver loop decides whether a no-progress
+what `zlib-ng` did. The caller-owned driver loop decides whether a no-progress
 step is recoverable or fatal.
 
 
 > [!IMPORTANT]
-> Initialize `Decompressor` in place and do not move it after successful initialization. zlib-ng stores an internal
+> Initialize `Decompressor` in place and do not move it after successful initialization. `zlib-ng` stores an internal
 back-pointer to the stream address. Do not use a constructor that returns an initialized `Decompressor` by value.
 
 Correct:
