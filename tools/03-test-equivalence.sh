@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 set -eu
 
+echo "Building benchmark executables"
+
 zig build -Doptimize=ReleaseFast > /dev/null
 cargo build --release --manifest-path bench/Cargo.toml > /dev/null
 

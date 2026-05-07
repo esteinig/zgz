@@ -119,10 +119,11 @@ Examples:
 
 Dependencies used for benchmark:
 
- - Zig 0.16.0
- - Rust 1.93
- - Python 3.14
- - gzip 1.10
+ - Zig=`0.16.0`
+ - Rust=`1.93.2`
+ - Python=`3.14.3`
+ - gzip=`1.10.0`
+ - hyperfine=`1.20.0`
 
 
 Create a valid and invalid gzip compressed file corpus:
@@ -134,47 +135,21 @@ tools/01-make-corpus.sh ./testdata
 Validate `zgz` valid/invalid test corpus against `zcat`:
 
 ```sh
-tools/02-check-corpus.sh testdata/
+tools/02-check-corpus.sh testdata/corpus
 ```
 
-Hash-check multiple files:
+Test output equivalence of benchmark executables (C, Rust, Zig) against `gzip`/`zcat`:
 
 ```sh
-for f in "$@"; do
-  expected="$(zcat "$f" | sha256sum | awk '{print $1}')"
-  zgz_hash="$(./zig-out/bin/zgz "$f" | sha256sum | awk '{print $1}')"
-  zgzfill_hash="$(./zig-out/bin/zgzfill "$f" | sha256sum | awk '{print $1}')"
-
-  if [ "$expected" != "$zgz_hash" ] || [ "$expected" != "$zgzfill_hash" ]; then
-    echo "mismatch: $f" >&2
-    echo "expected  $expected" >&2
-    echo "zgz       $zgz_hash" >&2
-    echo "zgzfill   $zgzfill_hash" >&2
-    exit 1
-  fi
-
-  echo "ok: $f"
-don
+tools/03-test-equivalence.sh testdata/corpus/valid/*.gz
 ```
 
-Compare against external tools:
+Run `hyperfine` benchmarks of decompresson library executables (C, Rust, Zig) against
+the `biofast` reference `.fastq` (Illumina short-reads, 150 bp) compressed with `gzip` 
+and the `Zymo` nanopore long read mock community (ONT long-reads, ~ 5kbp average):
 
 ```sh
-hyperfine \
-  './zig-out/bin/zgz sample.gz > /dev/null' \
-  './zig-out/bin/zgzfill sample.gz > /dev/null' \
-  'gzip -dc sample.gz > /dev/null' \
-  'zcat sample.gz > /dev/null'
-```
-
-With larger buffers:
-
-```sh
-hyperfine \
-  './zig-out/bin/zgz --in-buffer 1M --out-buffer 1M sample.gz > /dev/null' \
-  './zig-out/bin/zgzfill --in-buffer 1M --out-buffer 1M sample.gz > /dev/null' \
-  'gzip -dc sample.gz > /dev/null' \
-  'zcat sample.gz > /dev/null'
+tools/04-benchmark-files.sh testdata/biofast/biofast-v1.fastq.gz
 ```
 
 ## `zgz` library and APIs

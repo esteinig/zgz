@@ -9,10 +9,10 @@ fi
 file=$1
 command -v hyperfine >/dev/null || { echo "hyperfine not found" >&2; exit 127; }
 
-zig build -Doptimize=ReleaseFast >/dev/null
-cargo build --release --manifest-path bench/Cargo.toml > /dev/null
+echo "Building benchmark executables"
 
-LARGE_BUFFER="2M"
+zig build -Doptimize=ReleaseFast > /dev/null
+cargo build --release --manifest-path bench/Cargo.toml > /dev/null
 
 hyperfine \
   --warmup 3 \

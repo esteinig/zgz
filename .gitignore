@@ -3,7 +3,7 @@ zig-out/
 zig-pkg/
 
 testdata/
-
+zgz.tar.gz
 
 bench/target
 bench/zgz-hyperfine.json
