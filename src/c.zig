@@ -104,6 +104,29 @@ pub extern fn zng_inflateEnd(
 ) int32_t;
 
 
+pub const Z_DEFLATED: int32_t = 8;
+pub const Z_FINISH: int32_t = 4;
+pub const Z_DEFAULT_STRATEGY: int32_t = 0;
+
+pub extern fn zng_deflateInit2(
+    strm: *zng_stream,
+    level: int32_t,
+    method: int32_t,
+    window_bits: int32_t,
+    mem_level: int32_t,
+    strategy: int32_t,
+) int32_t;
+
+pub extern fn zng_deflate(
+    strm: *zng_stream,
+    flush: int32_t,
+) int32_t;
+
+pub extern fn zng_deflateEnd(
+    strm: *zng_stream,
+) int32_t;
+
+
 test "zng_stream ABI layout sanity" {
     try std.testing.expect(@sizeOf(zng_stream) >= 96);
     try std.testing.expect(@alignOf(zng_stream) >= @alignOf(usize));

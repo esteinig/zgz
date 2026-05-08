@@ -41,6 +41,26 @@ pub fn build(b: *std.Build) !void {
     bench_exe.root_module.linkLibrary(zng);
     b.installArtifact(bench_exe);
 
+    const igz_cli = [_]struct { name: []const u8, path: []const u8 }{
+        .{ .name = "zgz-cat", .path = "src/cli/zgz-cat.zig" },
+        .{ .name = "zgz-repack", .path = "src/cli/zgz-repack.zig" },
+        .{ .name = "zgz-inspect", .path = "src/cli/zgz-inspect.zig" },
+    };
+
+    for (igz_cli) |cli| {
+        const exe = b.addExecutable(.{
+            .name = cli.name,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path(cli.path),
+                .target = target,
+                .optimize = optimize,
+                .imports = &.{.{ .name = "zgz", .module = zgz_mod }},
+            }),
+        });
+        exe.root_module.linkLibrary(zng);
+        b.installArtifact(exe);
+    }
+
     const zgzfill_exe = b.addExecutable(.{
         .name = "zgzfill",
         .root_module = b.createModule(.{

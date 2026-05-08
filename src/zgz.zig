@@ -1,6 +1,8 @@
 const std = @import("std");
 const c = @import("c.zig");
 
+pub const igz = @import("igz.zig");
+
 /// Return the runtime zlib-ng version string.
 pub fn zlibVersion() []const u8 {
     return std.mem.span(c.zlibng_version());
