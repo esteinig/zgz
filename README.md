@@ -5,7 +5,7 @@
 highly optimized decompressor for high-throughput genome sequencing 
 data in production environments and bioinformatics applications.
 
-Performance is on par (or better) than Rust `flate2` implementations 
+Performance is on par with (or better than) Rust `flate2` implementations 
 (`zlib-ng`, `zlib-rs` or `miniz_oxide`) and exceeds `gzip`/`zcat` in 
 the tested [benchmark cases](#benchmarking-and-equivalence). 
 
@@ -74,19 +74,6 @@ reader-to-writer API:
 ./zig-out/bin/zgz [options] FILE.gz
 ```
 
-### `zgzfill`
-
-`zgzfill` streams gzip input to stdout through the direct `zgz.GzipInput`
-buffer-filler API:
-
-```sh
-./zig-out/bin/zgzfill [options] FILE.gz
-```
-
-`zgzfill` is mainly useful for benchmarking the direct API that downstream
-parsers can use to inflate directly into their own buffers.
-
-Both CLIs accept:
 
 ```text
 --in-buffer BYTES    Input file reader buffer. Supports K/M/G suffixes.
@@ -103,27 +90,28 @@ Both CLIs accept:
 -h, --help           Show help.
 ```
 
+`zgzfill` is mainly useful for benchmarking the direct API that downstream
+parsers can use to inflate directly into their own buffers.
+
 Examples:
 
 ```sh
 # Default buffer size: 256K
 ./zig-out/bin/zgz testdata/biofast.fq.gz > /dev/null
-./zig-out/bin/zgzfill testdata/biofast.fq.gz > /dev/null
 
 # Larger buffer size may increase performance
 ./zig-out/bin/zgz --in-buffer 1M --out-buffer 1M sample.gz > /dev/null
-./zig-out/bin/zgzfill --in-buffer 1M --out-buffer 1M sample.gz > /dev/null
 ```
 
 ## Benchmarking and equivalence
 
 Dependencies used for benchmark:
 
- - Zig=`0.16.0`
- - Rust=`1.93.2`
- - Python=`3.14.3`
- - gzip=`1.10.0`
- - hyperfine=`1.20.0`
+ - `zig=0.16.0`
+ - `rust=1.93.2`
+ - `python=3.14.3`
+ - `gzip=1.10.0`
+ - `hyperfine=1.20.0`
 
 
 Create a valid and invalid gzip compressed file corpus:
@@ -146,10 +134,12 @@ tools/03-test-equivalence.sh testdata/corpus/valid/*.gz
 
 Run `hyperfine` benchmarks of decompresson library executables (C, Rust, Zig) against
 the `biofast` reference `.fastq` (Illumina short-reads, 150 bp) compressed with `gzip` 
-and the `Zymo` nanopore long read mock community (ONT long-reads, ~ 5kbp average):
+and the `Zymo` nanopore long read mock community (ONT long-reads, ~ 5kbp average read
+length):
 
 ```sh
 tools/04-benchmark-files.sh testdata/biofast/biofast-v1.fastq.gz
+tools/04-benchmark-files.sh testdata/zymo/zymo-v1.fastq.gz
 ```
 
 ## `zgz` library and APIs
@@ -484,4 +474,4 @@ zig build test --summary all
 
 ## License
 
-TBD
+`MIT` and `ZLIB-NG`

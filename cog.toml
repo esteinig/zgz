@@ -22,6 +22,11 @@ repository = "seq-copy"
 
 [commit_types]
 hotfix = { changelog_title = "Hotfixes", bump_patch = true }
+docs = { changelog_title = "", omit_from_changelog = true }
+chore = { changelog_title = "", omit_from_changelog = true }
+ci = { changelog_title = "", omit_from_changelog = true }
+style = { changelog_title = "", omit_from_changelog = true }
+test = { changelog_title = "", omit_from_changelog = true }
 
 [git_hooks.pre-commit]
 script = """#!/bin/sh
