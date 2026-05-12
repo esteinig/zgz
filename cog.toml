@@ -1,0 +1,41 @@
+from_latest_tag = true
+ignore_merge_commits = true
+tag_prefix = "v"
+
+pre_bump_hooks = [
+  "zig build -Doptimize=ReleaseSafe",
+  "./scripts/set-zig-version.sh {{version}}",
+  "zig fmt build.zig.zon",
+]
+
+post_bump_hooks = [
+  "git push origin HEAD",
+  "git push origin v{{version}}",
+]
+
+[changelog]
+path = "CHANGELOG.md"
+template = "remote"
+remote = "github.com"
+owner = "esteinig"
+repository = "seq-copy"
+
+[commit_types]
+hotfix = { changelog_title = "Hotfixes", bump_patch = true }
+
+[git_hooks.pre-commit]
+script = """#!/bin/sh
+set -eu
+
+zig fmt .
+git add -A
+zig build test
+"""
+
+[git_hooks.pre-push]
+script = """#!/bin/sh
+set -eu
+
+zig build test
+zig build -Doptimize=ReleaseSafe
+"""
