@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## [v0.2.0](https://github.com/esteinig/seq-copy/compare/4ddbb1e061f50d1c661e292137cb5d20cca5e429..v0.2.0) - 2026-05-12
+#### Features
+- Benchmarks with auto-generated Markdown table - ([4ddbb1e](https://github.com/esteinig/seq-copy/commit/4ddbb1e061f50d1c661e292137cb5d20cca5e429)) - esteinig
+
+- - -
+
 ## [v0.1.0](https://github.com/esteinig/seq-copy/compare/8d213d7c676f461948e4b2c7ffb81bfc980e8fa3..v0.1.0) - 2026-05-12
 #### Features
 - v0.1.0 - ([274e4c6](https://github.com/esteinig/seq-copy/commit/274e4c6a0bb901318256a285c41436d7f51bc908)) - esteinig
