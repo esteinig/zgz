@@ -5,9 +5,9 @@
 highly optimized decompressor for high-throughput genome sequencing 
 data in production environments and bioinformatics applications.
 
-Performance is on par with (or better than) Rust `flate2` implementations 
+Performance is on par with `flate2` [implementations in Rust](bench/Cargo.toml)
 (`zlib-ng`, `zlib-rs` or `miniz_oxide`) and exceeds `gzip`/`zcat` in 
-the tested [benchmark cases](#benchmarking-and-equivalence). 
+the tested [benchmark cases](docs/benchmarks.md). 
 
 ## Features
 
@@ -140,6 +140,12 @@ length):
 ```sh
 tools/04-benchmark-files.sh testdata/biofast/biofast-v1.fastq.gz
 tools/04-benchmark-files.sh testdata/zymo/zymo-v1.fastq.gz
+```
+
+Run `hyperfine` benchmarks and create a benchmark table in `docs/benchmarks.md`:
+
+```sh
+tools/05-benchmark-markdown.sh testdata/biofast/biofast-v1.fastq.gz
 ```
 
 ## `zgz` library and APIs
