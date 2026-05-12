@@ -25,8 +25,6 @@ The `zgz` executable can be used as a general `zcat`-like decompressor:
 zgz reads.fq.gz > reads.fq
 ```
 
-It is ~3x faster than system `gzip` in our genomics benchmarks.
-
 Zig library for custom implementations:
 
   - High-level `std.Io.Reader` to `std.Io.Writer` streaming API ([`zgz.decompress`](#high-level-streaming-api))
