@@ -48,16 +48,20 @@ fn reportPrelude(
     stderr: *std.Io.Writer,
     in_buffer: usize,
 ) !void {
+
     var file = try std.Io.Dir.cwd().openFile(io, path, .{});
     defer file.close(io);
+
     const buf = try allocator.alloc(u8, in_buffer);
     defer allocator.free(buf);
+
     var reader = file.readerStreaming(io, buf);
     var payloads = zgz.igz.readPreludePayloadsAlloc(&reader.interface, allocator, 1_000_000) catch |err| {
         try stderr.print("zgz-cat: could not probe IGZ prelude: {s}; using sequential gzip fallback\n", .{@errorName(err)});
         return;
     };
     defer payloads.deinit(allocator);
+    
     if (payloads.items.len == 0) {
         try stderr.writeAll("zgz-cat: no embedded IGZ prelude found; using sequential gzip fallback\n");
         return;
@@ -84,6 +88,7 @@ pub fn main(init: std.process.Init) !void {
     const allocator = std.heap.smp_allocator;
 
     var stderr_file = std.Io.File.stderr();
+
     var stderr_buf: [16 * 1024]u8 = undefined;
     var stderr = stderr_file.writer(io, &stderr_buf);
     defer stderr.interface.flush() catch {};
@@ -97,14 +102,17 @@ pub fn main(init: std.process.Init) !void {
 
     var file = try std.Io.Dir.cwd().openFile(io, input, .{});
     defer file.close(io);
-
+    
     const in_buf = try allocator.alloc(u8, o.in_buffer);
     defer allocator.free(in_buf);
 
     var reader = file.readerStreaming(io, in_buf);
+
     var stdout_file = std.Io.File.stdout();
+
     const out_buf = try allocator.alloc(u8, o.out_buffer);
     defer allocator.free(out_buf);
+    
     var writer = stdout_file.writer(io, out_buf);
 
     _ = try zgz.igz.cat(&reader.interface, &writer.interface);
