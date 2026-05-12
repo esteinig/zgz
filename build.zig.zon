@@ -1,7 +1,8 @@
 .{
+    .version = "0.1.0",
     .name = .zgz,
     .fingerprint = 0x3c4b51d6b4387f93,
-    .version = "0.0.1",
+    .version = "0.1.0",
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .zlib_ng = .{
